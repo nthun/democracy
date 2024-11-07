@@ -1,0 +1,119 @@
+---
+title: "Democracy EDA"
+author: "Tamás Nagy"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# Setup the project
+
+```{r setup}
+library(tidyverse)
+library(skimr)
+
+theme_set(theme_light())
+
+```
+
+# Read the data
+```{r}
+demo_raw <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-11-05/democracy_data.csv')
+
+```
+
+# Explore the dataset
+
+```{r}
+demo_raw |> 
+    glimpse()
+
+demo_raw |> 
+    group_by(country_name) |>  
+    slice(1)
+
+demo_raw |> 
+    select(year) |> 
+    skim()
+
+```
+
+# See monarchies (over time)
+
+```{r}
+demo_raw |> 
+    filter(year == 2020) |> 
+    count(is_monarchy)
+
+demo_raw |> 
+    filter(year == 2020, is.na(is_monarchy))
+
+demo_raw |> 
+    ggplot() +
+    aes(x = year, fill = is_monarchy) +
+    geom_bar(position = "stack")
+
+```
+
+```{r}
+demo_raw |> 
+    ggplot() +
+    aes(x = year, fill = is_communist) +
+    geom_bar(position = "fill") +
+    scale_y_continuous(label = scales::percent_format()) +
+    labs(x = NULL, y = NULL, fill = "Is it communist?")
+
+```
+
+```{r}
+demo_raw |> 
+    ggplot() +
+    aes(x = year, fill = has_free_and_fair_election) +
+    geom_bar(position = "fill") +
+    scale_y_continuous(label = scales::percent_format()) +
+    labs(x = NULL, y = NULL, fill = "Free elections?")
+
+
+```
+
+```{r}
+
+monarchs <-
+    demo_raw |> 
+    filter(is_monarchy == TRUE, !is.na(monarch_name)) |> 
+    select(country_name, year, starts_with("monarch")) |> 
+    group_by(country_name, monarch_name) |> 
+    arrange(country_name, year) |> 
+    slice_tail(n = 1) |> 
+    mutate(reign = year - monarch_accession_year)
+    
+monarchs |> 
+    ggplot() +
+    aes(x = reign) +
+    geom_histogram() +
+    labs(title = "Histogram of the reign of monarchs")
+    
+```
+
+```{r}
+demo_raw |> 
+    count(regime_category, sort = TRUE)
+```
+
+```{r}
+demo_raw |> 
+    filter(is_presidential) |> 
+    group_by(year) |> 
+    summarise(female_president_prop = mean(is_female_president, na.rm = TRUE)) |> 
+    ggplot() +
+    aes(x = year, y = female_president_prop) +
+    geom_line() +
+    scale_y_continuous(labels = scales::percent_format(), limits = c(0, .2)) +
+    labs(x = NULL, y = NULL, title = "% of female presidents")
+    
+    
+```
+
+
+
